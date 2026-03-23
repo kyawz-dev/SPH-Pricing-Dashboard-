@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPH Competitor Price Dashboard 2027/2028</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+  :root {
+    --sph-dark:#185FA5;--sph-mid:#378ADD;--sph-light:#E6F1FB;--sph-text:#0C447C;
+    --heat-high-bg:#FCEBEB;--heat-high-t:#A32D2D;
+    --heat-mid-bg:#FFF8E6;--heat-mid-t:#7A5200;
+    --heat-low-bg:#EAF3DE;--heat-low-t:#3B6D11;
+    --heat-na-bg:#EFEFED;--heat-na-t:#999794;
+    --bg:#EEF2F7;--surface:#FFFFFF;--border:rgba(24,95,165,0.10);
+    --text:#1A1A1A;--muted:#7A8799;--radius:12px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;}
+  .header{background:linear-gradient(135deg,#0D3F73 0%,#185FA5 60%,#2176C7 100%);padding:22px 36px;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid rgba(255,255,255,0.12);}
+  .header-title{font-size:22px;font-weight:600;color:#fff;letter-spacing:-0.4px;}
+  .header-sub{font-size:12px;color:rgba(255,255,255,0.55);margin-top:3px;}
+  .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+  .header-badge{background:rgba(255,255,255,0.15);color:#fff;font-size:11px;padding:4px 14px;border-radius:99px;border:1px solid rgba(255,255,255,0.2);}
+  .header-year{font-size:28px;font-weight:600;color:rgba(255,255,255,0.25);font-family:'DM Mono',monospace;letter-spacing:-1px;}
+  .controls{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 36px;display:flex;gap:28px;align-items:center;flex-wrap:wrap;box-shadow:0 2px 8px rgba(24,95,165,0.06);}
+  .ctrl-group{display:flex;flex-direction:column;gap:5px;}
+  .ctrl-label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;}
+  .tab-row{display:flex;gap:4px;}
+  .tab{font-size:13px;padding:6px 16px;border-radius:99px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all 0.15s;font-family:inherit;}
+  .tab:hover{border-color:var(--sph-dark);color:var(--sph-dark);background:var(--sph-light);}
+  .tab.active{background:var(--sph-dark);color:#fff;border-color:var(--sph-dark);box-shadow:0 2px 6px rgba(24,95,165,0.3);}
+  .ctrl-divider{width:1px;height:40px;background:var(--border);}
+  .view-toggle{display:flex;gap:3px;background:var(--bg);border-radius:10px;padding:3px;border:1px solid var(--border);}
+  .view-btn{font-size:12px;padding:5px 16px;border-radius:7px;border:none;background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;transition:all 0.15s;font-weight:500;}
+  .view-btn.active{background:var(--surface);color:var(--sph-dark);font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,0.1);}
+  .main{padding:24px 36px;max-width:1440px;margin:0 auto;}
+  .kpi-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:22px;}
+  .kpi{background:var(--surface);border-radius:var(--radius);padding:18px 22px;border:1px solid var(--border);position:relative;overflow:hidden;}
+  .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--sph-light);}
+  .kpi-label{font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;}
+  .kpi-value{font-size:28px;font-weight:600;color:var(--text);font-family:'DM Mono',monospace;letter-spacing:-1px;line-height:1;}
+  .kpi-sub{font-size:12px;margin-top:6px;}
+  .kpi-up{color:#C0392B;}.kpi-down{color:var(--heat-low-t);}.kpi-neutral{color:var(--muted);}
+  .kpi.accent{background:var(--sph-dark);border-color:var(--sph-dark);}
+  .kpi.accent::before{background:rgba(255,255,255,0.3);}
+  .kpi.accent .kpi-label{color:rgba(255,255,255,0.6);}
+  .kpi.accent .kpi-value{color:#fff;}
+  .kpi.accent .kpi-sub{color:rgba(255,255,255,0.65);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+  .panel{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:20px;box-shadow:0 1px 4px rgba(24,95,165,0.05);}
+  .panel-title{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .panel-title::before{content:'';width:3px;height:14px;background:var(--sph-dark);border-radius:2px;flex-shrink:0;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{font-size:11px;font-weight:600;color:var(--muted);text-align:right;padding:8px 10px;border-bottom:2px solid var(--bg);background:#FAFBFC;}
+  th:first-child{text-align:left;}
+  td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--bg);color:var(--text);font-family:'DM Mono',monospace;font-size:12px;}
+  td:first-child{text-align:left;font-family:'DM Sans',sans-serif;font-weight:500;font-size:13px;}
+  tr.sph-row td{background:var(--sph-light);color:var(--sph-text);font-weight:700;}
+  tr.avg-row td{color:var(--muted);font-style:italic;background:#FAFBFC;font-size:11px;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:#F5F8FC;}
+  tr.sph-row:hover td{background:#D8EAF8;}
+  .h-sph{background:var(--sph-dark)!important;color:#fff!important;font-weight:700!important;border-radius:6px;}
+  .h-high{background:var(--heat-high-bg)!important;color:var(--heat-high-t)!important;border-radius:6px;}
+  .h-mid{background:var(--heat-mid-bg)!important;color:var(--heat-mid-t)!important;border-radius:6px;}
+  .h-low{background:var(--heat-low-bg)!important;color:var(--heat-low-t)!important;border-radius:6px;}
+  .h-na{background:var(--heat-na-bg)!important;color:var(--heat-na-t)!important;border-radius:6px;font-style:italic;}
+  .legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+  .legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+  .heat-legend{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap;}
+  .heat-pill{font-size:11px;padding:3px 10px;border-radius:5px;font-weight:500;}
+  .chart-wrap{position:relative;width:100%;}
+  .scatter-area{position:relative;height:220px;border-left:1px solid var(--border);border-bottom:1px solid var(--border);margin:10px 10px 24px 44px;background:linear-gradient(180deg,rgba(24,95,165,0.02) 0%,transparent 100%);border-radius:0 0 4px 0;}
+  .scatter-dot{position:absolute;border-radius:50%;transform:translate(-50%,50%);transition:transform 0.2s;cursor:pointer;}
+  .scatter-dot:hover{transform:translate(-50%,50%) scale(1.4);}
+  .scatter-label{position:absolute;font-size:10px;white-space:nowrap;transform:translate(0,50%);}
+  .scatter-axis-x{position:absolute;bottom:-18px;font-size:10px;color:var(--muted);}
+  .scatter-axis-y{position:absolute;left:-40px;font-size:10px;color:var(--muted);writing-mode:vertical-rl;top:50%;transform:translateY(-50%) rotate(180deg);}
+  #view-b{display:none;}
+  @media(max-width:900px){.grid2{grid-template-columns:1fr;}.kpi-row{grid-template-columns:repeat(2,1fr);}.main{padding:16px;}.controls{padding:12px 16px;gap:16px;}.header{padding:16px;}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <div class="header-title">SPH Competitor Price Dashboard</div>
+    <div class="header-sub">Academic year 2027/2028 · All prices in IDR (juta)</div>
+  </div>
+  <div class="header-right">
+    <div class="header-badge">Marketing Division · Confidential</div>
+    <div class="header-year">2027/28</div>
+  </div>
+</div>
+<div class="controls">
+  <div class="ctrl-group">
+    <div class="ctrl-label">View</div>
+    <div class="view-toggle">
+      <button class="view-btn active" onclick="setView('a',this)">Single campus</button>
+      <button class="view-btn" onclick="setView('b',this)">All campuses</button>
+    </div>
+  </div>
+  <div class="ctrl-divider"></div>
+  <div class="ctrl-group" id="campus-ctrl">
+    <div class="ctrl-label">Campus</div>
+    <div class="tab-row">
+      <button class="tab active" onclick="setCampus('LV',this)">LV</button>
+      <button class="tab" onclick="setCampus('SC',this)">SC</button>
+      <button class="tab" onclick="setCampus('LC',this)">LC</button>
+      <button class="tab" onclick="setCampus('KV',this)">KV</button>
+      <button class="tab" onclick="setCampus('PV',this)">PV</button>
+    </div>
+  </div>
+  <div class="ctrl-divider"></div>
+  <div class="ctrl-group" id="level-ctrl">
+    <div class="ctrl-label">Level</div>
+    <div class="tab-row">
+      <button class="tab active" onclick="setLevel('KINDY',this)">Kindy</button>
+      <button class="tab" onclick="setLevel('JS',this)">Junior School</button>
+      <button class="tab" onclick="setLevel('MSSS',this)">Mid–Senior</button>
+    </div>
+  </div>
+</div>
+<div class="main">
+<div id="view-a">
+  <div class="kpi-row" id="kpi-row"></div>
+  <div class="grid2">
+    <div class="panel">
+      <div class="panel-title">Fee comparison by grade</div>
+      <div id="grade-table"></div>
+      <div class="heat-legend">
+        <span class="heat-pill" style="background:var(--sph-light);color:var(--sph-text);">SPH campus</span>
+        <span class="heat-pill" style="background:var(--heat-high-bg);color:var(--heat-high-t);">High &gt;300 jt</span>
+        <span class="heat-pill" style="background:var(--heat-mid-bg);color:var(--heat-mid-t);">Mid 100–300 jt</span>
+        <span class="heat-pill" style="background:var(--heat-low-bg);color:var(--heat-low-t);">Low &lt;100 jt</span>
+        <span class="heat-pill" style="background:var(--heat-na-bg);color:var(--heat-na-t);">N/A</span>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Average fee by school</div>
+      <div class="legend">
+        <span style="display:flex;align-items:center;gap:5px;"><span class="legend-dot" style="background:var(--sph-dark);"></span>SPH</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span class="legend-dot" style="background:#B5D4F4;"></span>Competitors</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span class="legend-dot" style="background:#E24B4A;border-radius:0;height:2px;width:16px;"></span>Market avg</span>
+      </div>
+      <div class="chart-wrap" style="height:250px;position:relative;"><canvas id="barChart"></canvas></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <div class="panel-title">Heat map — all grades at a glance</div>
+      <div id="heat-map" style="overflow-x:auto;"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Market positioning — avg fee</div>
+      <div class="scatter-area" id="scatter-area">
+        <span class="scatter-axis-y">Spread</span>
+        <span class="scatter-axis-x" style="left:0;">Lower price</span>
+        <span class="scatter-axis-x" style="right:0;">Higher price</span>
+      </div>
+      <div class="heat-legend" style="margin-top:0;">
+        <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);"><span style="width:10px;height:10px;border-radius:50%;background:var(--sph-dark);display:inline-block;"></span>SPH</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);"><span style="width:10px;height:10px;border-radius:50%;background:#E24B4A;display:inline-block;"></span>Premium &gt;300 jt</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);"><span style="width:10px;height:10px;border-radius:50%;background:#B5D4F4;display:inline-block;"></span>Others</span>
+      </div>
+    </div>
+  </div>
+  <div class="panel" style="margin-bottom:16px;">
+    <div class="panel-title">Year-over-year price trend — SPH avg vs market avg</div>
+    <div class="legend">
+      <span style="display:flex;align-items:center;gap:5px;"><span class="legend-dot" style="background:var(--sph-dark);"></span>SPH campus</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span class="legend-dot" style="background:#888780;"></span>Market avg</span>
+    </div>
+    <div class="chart-wrap" style="height:170px;position:relative;"><canvas id="yoyChart"></canvas></div>
+  </div>
+</div>
+<div id="view-b">
+  <div class="kpi-row" id="kpi-row-b"></div>
+  <div class="panel" style="margin-bottom:16px;">
+    <div class="panel-title">All campuses — SPH avg fee by level</div>
+    <div class="legend">
+      <span style="display:flex;align-items:center;gap:5px;"><span class="legend-dot" style="background:#185FA5;"></span>Kindy</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span class="legend-dot" style="background:#378ADD;"></span>Junior School</span>
+      <span style="display:flex;align-items:center;gap:5px;"><span class="legend-dot" style="background:#85B7EB;"></span>Mid–Senior</span>
+    </div>
+    <div class="chart-wrap" style="height:240px;position:relative;"><canvas id="allCampusChart"></canvas></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">SPH campus fee summary</div>
+    <div id="all-campus-table"></div>
+  </div>
+</div>
+</div>
+<script>
+const DATA={
+  LV:{
+    KINDY:{
+      grades:['K1','K2','K3'],
+      schools:['SPH LV','Kipina Gading Serpong','PlayField','iSmile','SPH PV','SWA','Wellington','Sunsmile Karawaci','JIS'],
+      prices:[[119,32,47.2,null,94,74.7,470,18.4,292],[119,38.4,54,156.2,94,137.7,470,19.2,292],[125,38.4,54,null,97,137.7,470,null,427.4]],
+      avgs:[121,36.3,51.7,156.2,95,106.2,470,18.8,337.1],
+      yoy:{sph:[108,112,115,118,121],mkt:[88,92,95,98,102]},
+    },
+    JS:{
+      grades:['G1','G2','G3','G4','G5','G6'],
+      schools:['SPH LV','SPH PV','SDH LV','HOPE Academy','BSJ','JIS'],
+      prices:[[196,136,34.7,105.6,366.1,551.5],[196,136,34.7,105.6,387.5,551.5],[208,143,34.7,112.2,387.5,551.5],[208,143,34.7,112.2,387.5,551.5],[208,143,34.7,115.2,387.5,551.5],[208,155,34.7,115.2,387.5,627.7]],
+      avgs:[208,155,34.7,115.2,387.5,627.7],
+      yoy:{sph:[180,190,198,203,208],mkt:[160,175,185,195,206]},
+    },
+    MSSS:{
+      grades:['G7','G8','G9','G10','G11','G12'],
+      schools:['SPH LV','BSJ','JIS','IICS','BINUS Serpong','SWA'],
+      prices:[[284,444,527,135.6,81.6,null],[284,444,527,135.6,81.6,222.1],[284,444,527,135.6,81.6,null],[319,444,532.4,160.5,85.2,null],[384,444,532.4,160.5,85.2,null],[384,486.7,532.4,160.5,85.2,null]],
+      avgs:[323.2,451.1,529.7,160.5,83.4,222.1],
+      yoy:{sph:[265,280,295,308,323],mkt:[310,330,350,368,385]},
+    },
+  },
+  SC:{
+    KINDY:{
+      grades:['K1','K2','K3'],
+      schools:['SPH SC','Sekolah Bogor Raya','SDH Bogor','BPK Penabur','High Scope'],
+      prices:[[50,25.2,13.8,33.3,28.4],[53,32.4,15,33.3,28.4],[60,40.8,16.2,33.3,28.4]],
+      avgs:[54.3,32.8,15,33.3,28.4],
+      yoy:{sph:[44,47,49,51,54],mkt:[26,27,28,29,30]},
+    },
+    JS:{
+      grades:['G1','G2','G3','G4','G5','G6'],
+      schools:['SPH SC','SBR','SDH Bogor','BPK Penabur Sentul','Sampoerna Academy','High Scope'],
+      prices:[[70,63.6,16.8,43.6,73.8,49.2],[70,63.6,16.8,43.6,73.8,49.2],[78,63.6,16.8,43.6,73.8,49.2],[88,70.8,16.8,43.6,73.8,49.2],[88,70.8,16.8,43.6,73.8,49.2],[93,70.8,16.8,43.6,73.8,49.2]],
+      avgs:[93,70.8,16.8,43.6,73.8,49.2],
+      yoy:{sph:[65,70,74,78,93],mkt:[52,54,56,58,60]},
+    },
+    MSSS:{
+      grades:['G7','G8','G9','G10','G11','G12'],
+      schools:['SPH SC','SBR','SDH Bogor','BPK Penabur Sentul','Sampoerna Academy'],
+      prices:[[125,80.4,18,54.1,93.6],[127,80.4,18,54.1,93.6],[127,80.4,18,54.1,98],[138,90,18,54.1,98],[145,93.6,18,54.1,112.5],[145,93.6,18,54.1,112.5]],
+      avgs:[134.5,86.4,18,54.1,107.7],
+      yoy:{sph:[112,118,122,128,134.5],mkt:[70,74,78,82,86]},
+    },
+  },
+  LC:{
+    KINDY:{
+      grades:['K1','K2','K3'],
+      schools:['SPH LC','Three Little Angels','Charis Global School'],
+      prices:[[92,20.2,23.5],[105,20.2,23.5],[105,20.2,23.5]],
+      avgs:[100.7,20.2,23.5],
+      yoy:{sph:[85,90,94,97,101],mkt:[17,18,19,19.5,21]},
+    },
+    JS:{
+      grades:['G1','G2','G3','G4','G5','G6'],
+      schools:['SPH LC','SDH LC'],
+      prices:[[164,31.3],[164,31.3],[164,31.3],[164,31.3],[164,31.3],[164,31.3]],
+      avgs:[164,31.3],
+      yoy:{sph:[138,144,150,158,164],mkt:[27,28,29,30,31]},
+    },
+    MSSS:{
+      grades:['G7','G8','G9','G10','G11','G12'],
+      schools:['SPH LC','SDH LC','JIKS','Charis Global School'],
+      prices:[[189,32.4,111.8,28.8],[189,32.4,111.8,28.8],[198,32.4,111.8,28.8],[198,34.8,116.7,null],[222,34.8,116.7,null],[222,34.8,116.7,null]],
+      avgs:[203,33.6,114.3,28.8],
+      yoy:{sph:[165,174,182,192,203],mkt:[56,62,68,74,80]},
+    },
+  },
+  KV:{
+    KINDY:{
+      grades:['K1','K2','K3'],
+      schools:['SPH KV','Mighty Minds','HEI School Senayan','Playhouse Academy','Julia Gabriel','Kipina','ICA','SUKU Preschool','TreHaus','Mindchamps'],
+      prices:[[127,12.5,126,99,131,60,null,114.9,104,432],[131,91.5,150,99,143.6,72,168,183.7,112,432],[138,96,162,105,143.6,72,null,null,112,432]],
+      avgs:[132,66.7,146,101,139.4,68,168,149.3,109.3,432],
+      yoy:{sph:[108,113,118,125,132],mkt:[125,130,136,141,145]},
+    },
+    JS:{
+      grades:['G1','G2','G3','G4','G5','G6'],
+      schools:['SPH KV','Nord Anglia','ACS','ACG','Global Jaya','JIS','BSJ','Wellington'],
+      prices:[[206,346.7,254,269.6,160.3,450.9,366.1,470],[219,351.2,254,274.5,160.3,450.9,387.5,470],[219,351.2,254,335.2,160.3,450.9,387.5,470],[219,351.2,254,335.2,160.3,450.9,387.5,470],[219,351.2,254,338.5,160.3,450.9,387.5,470],[270,351.2,254,341.8,160.3,527,387.5,470]],
+      avgs:[270,351.2,254,341.8,160.3,527,387.5,470],
+      yoy:{sph:[178,186,196,205,270],mkt:[340,355,368,378,390]},
+    },
+    MSSS:{
+      grades:['G7','G8','G9','G10','G11','G12'],
+      schools:['SPH KV','JIS','ACS','SPH LV','BSJ'],
+      prices:[[270,627.7,275,265,444],[270,627.7,275,265,444],[321,633,287,265,444],[321,633,287,298,444],[367,633,310,358,444],[367,633,310,358,486.7]],
+      avgs:[319.3,631.2,290.7,301.5,451.1],
+      yoy:{sph:[262,278,294,306,319],mkt:[400,415,428,440,454]},
+    },
+  },
+  PV:{
+    KINDY:{
+      grades:['K1','K2','K3'],
+      schools:['SPH PV','BBS PIK','Sunsmile PIK','Tutor Time Pluit'],
+      prices:[[96,53,null,59.95],[96,60,18.4,null],[99,62,19.2,null]],
+      avgs:[97,58.3,18.8,59.95],
+      yoy:{sph:[82,86,89,93,97],mkt:[44,46,48,50,52]},
+    },
+    JS:{
+      grades:['G1','G2','G3','G4','G5','G6'],
+      schools:['SPH PV','SPH LV','BTB Pluit Timur','BBS PIK'],
+      prices:[[140,196,72,108],[140,196,72,108],[148,208,72,108],[148,208,72,108],[148,208,72,108],[144.8,203.2,72,108]],
+      avgs:[144.8,203.2,72,108],
+      yoy:{sph:[120,126,132,139,144.8],mkt:[120,126,128,130,130]},
+    },
+    MSSS:{
+      grades:['G7','G8','G9','G10','G11','G12'],
+      schools:['SPH PV','SPH LV','BTB Pluit Putri','BSJ','ACS','Bukit Sion'],
+      prices:[[160,208,null,387.5,242,null],[169,265,null,444,262,null],[169,265,null,444,262,null],[173,265,null,444,273,null],[173,298,77.4,444,273,45.65],[168.8,260.2,77.4,432.7,262.4,45.65]],
+      avgs:[168.8,260.2,77.4,432.7,262.4,45.65],
+      yoy:{sph:[138,145,152,160,168.8],mkt:[230,245,260,272,285]},
+    },
+  },
+};
+const YOY_YEARS=['2023–24','2024–25','2025–26','2026–27','2027–28'];
+let campus='LV',level='KINDY',view='a';
+let barInst=null,yoyInst=null,allInst=null;
+function fmt(v){return v==null?'N/A':Math.round(v)+' jt';}
+function hClass(v,isSph){
+  if(isSph)return 'h-sph';
+  if(v==null)return 'h-na';
+  if(v>=300)return 'h-high';
+  if(v>=100)return 'h-mid';
+  return 'h-low';
+}
+function renderKPI(){
+  const d=DATA[campus][level];
+  const sphAvg=d.avgs[0];
+  const compAvgs=d.avgs.slice(1).filter(v=>v!=null);
+  const mktAvg=compAvgs.reduce((a,b)=>a+b,0)/compAvgs.length;
+  const diff=((sphAvg/mktAvg)-1)*100;
+  const lowest=Math.min(...compAvgs);
+  const lowestName=d.schools[d.avgs.findIndex((v,i)=>i>0&&v===lowest)]||'—';
+  document.getElementById('kpi-row').innerHTML=`
+    <div class="kpi accent"><div class="kpi-label">SPH ${campus} avg fee</div><div class="kpi-value">${fmt(sphAvg)}</div><div class="kpi-sub" style="color:rgba(255,255,255,0.65);">Current year 2027/28</div></div>
+    <div class="kpi"><div class="kpi-label">Market average</div><div class="kpi-value">${fmt(mktAvg)}</div><div class="kpi-sub kpi-neutral">${compAvgs.length} competitors</div></div>
+    <div class="kpi" style="border-top:3px solid ${diff>0?'#FCEBEB':'#EAF3DE'};"><div class="kpi-label">SPH vs market</div><div class="kpi-value" style="color:${diff>0?'#C0392B':'#3B6D11'}">${diff>0?'+':''}${diff.toFixed(0)}%</div><div class="kpi-sub ${diff>0?'kpi-up':'kpi-down'}">${diff>0?'Above':'Below'} market avg</div></div>
+    <div class="kpi"><div class="kpi-label">Lowest competitor</div><div class="kpi-value">${fmt(lowest)}</div><div class="kpi-sub kpi-neutral">${lowestName}</div></div>`;
+}
+function renderTable(){
+  const d=DATA[campus][level];
+  const vis=d.schools.slice(0,Math.min(d.schools.length,8));
+  let h=`<table><thead><tr><th>Grade</th>`;
+  vis.forEach(s=>h+=`<th style="text-align:center">${s.length>14?s.slice(0,13)+'…':s}</th>`);
+  h+=`</tr></thead><tbody>`;
+  d.grades.forEach((g,gi)=>{
+    h+=`<tr><td>${g}</td>`;
+    vis.forEach((s,si)=>{const v=d.prices[gi][si];h+=`<td class="${hClass(v,si===0)}" style="text-align:center">${fmt(v)}</td>`;});
+    h+=`</tr>`;
+  });
+  h+=`<tr class="avg-row"><td>Average</td>`;
+  vis.forEach((s,si)=>h+=`<td style="text-align:center">${fmt(d.avgs[si])}</td>`);
+  h+=`</tr></tbody></table>`;
+  document.getElementById('grade-table').innerHTML=h;
+}
+function renderHeat(){
+  const d=DATA[campus][level];
+  const vis=d.schools.slice(0,Math.min(d.schools.length,7));
+  let h=`<table style="font-size:11px;"><thead><tr><th>Grade</th>`;
+  vis.forEach(s=>h+=`<th style="text-align:center;font-size:10px;">${s.length>10?s.slice(0,9)+'…':s}</th>`);
+  h+=`</tr></thead><tbody>`;
+  d.grades.forEach((g,gi)=>{
+    h+=`<tr><td style="font-size:11px;font-weight:500;color:var(--muted);padding:5px 8px;">${g}</td>`;
+    vis.forEach((s,si)=>{const v=d.prices[gi][si];h+=`<td class="${hClass(v,si===0)}" style="text-align:center;padding:5px 6px;font-size:11px;">${v==null?'N/A':Math.round(v)}</td>`;});
+    h+=`</tr>`;
+  });
+  h+=`</tbody></table>`;
+  document.getElementById('heat-map').innerHTML=h;
+}
+function renderBar(){
+  const d=DATA[campus][level];
+  const labels=d.schools.map(s=>s.length>12?s.slice(0,11)+'…':s);
+  const colors=d.avgs.map((v,i)=>i===0?'#185FA5':'#B5D4F4');
+  const compAvgs=d.avgs.slice(1).filter(v=>v!=null);
+  const mktAvg=compAvgs.reduce((a,b)=>a+b,0)/compAvgs.length;
+  if(barInst)barInst.destroy();
+  barInst=new Chart(document.getElementById('barChart'),{type:'bar',data:{labels,datasets:[{data:d.avgs,backgroundColor:colors,borderRadius:6,barThickness:20},{type:'line',data:Array(d.avgs.length).fill(mktAvg),borderColor:'#E24B4A',borderDash:[5,4],borderWidth:1.5,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' Rp '+ctx.parsed.y+' jt'}}},scales:{x:{grid:{display:false},ticks:{font:{size:10},color:'#888',maxRotation:30,autoSkip:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+'jt',font:{size:10},color:'#888'},border:{display:false}}}}});
+}
+function renderScatter(){
+  const d=DATA[campus][level];
+  const area=document.getElementById('scatter-area');
+  area.querySelectorAll('.scatter-dot,.scatter-label').forEach(e=>e.remove());
+  const maxAvg=Math.max(...d.avgs.filter(v=>v!=null));
+  const w=area.offsetWidth||300,h=area.offsetHeight||200;
+  d.avgs.forEach((v,i)=>{
+    if(v==null)return;
+    const isSph=i===0;
+    const xPct=v/maxAvg,yPct=isSph?0.5:0.25+Math.random()*0.5;
+    const left=xPct*(w-30)+10,bottom=yPct*(h-30)+15,size=isSph?16:10;
+    const color=isSph?'#185FA5':(v>300?'#E24B4A':'#B5D4F4');
+    const dot=document.createElement('div');
+    dot.className='scatter-dot';
+    dot.style.cssText=`left:${left}px;bottom:${bottom}px;width:${size}px;height:${size}px;background:${color};border:2px solid ${isSph?'#0C447C':'transparent'};box-shadow:${isSph?'0 2px 8px rgba(24,95,165,0.4)':'none'};`;
+    dot.title=`${d.schools[i]}: ${fmt(v)}`;area.appendChild(dot);
+    const lbl=document.createElement('span');
+    lbl.className='scatter-label';
+    lbl.style.cssText=`left:${left+size/2+4}px;bottom:${bottom-4}px;color:${isSph?'#185FA5':'#888'};font-weight:${isSph?600:400};font-size:${isSph?11:10}px;`;
+    lbl.textContent=d.schools[i].split(' ').slice(0,2).join(' ');area.appendChild(lbl);
+  });
+}
+function renderYoy(){
+  const d=DATA[campus][level];
+  if(yoyInst)yoyInst.destroy();
+  yoyInst=new Chart(document.getElementById('yoyChart'),{type:'line',data:{labels:YOY_YEARS,datasets:[{label:'SPH',data:d.yoy.sph,borderColor:'#185FA5',backgroundColor:'rgba(24,95,165,0.07)',fill:true,tension:0.35,pointRadius:4,pointBackgroundColor:'#185FA5',borderWidth:2},{label:'Market',data:d.yoy.mkt,borderColor:'#888780',borderDash:[4,3],backgroundColor:'transparent',tension:0.35,pointRadius:3,pointBackgroundColor:'#888780',borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' Rp '+ctx.parsed.y+' jt'}}},scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#888'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+'jt',font:{size:11},color:'#888'},border:{display:false}}}}});
+}
+function renderViewB(){
+  const campuses=['LV','SC','LC','KV','PV'],levels=['KINDY','JS','MSSS'],levelLabels=['Kindy','Junior School','Mid–Senior'],colors=['#185FA5','#378ADD','#85B7EB'];
+  document.getElementById('kpi-row-b').innerHTML=campuses.map(c=>{const d=DATA[c]['KINDY'];return `<div class="kpi"><div class="kpi-label">SPH ${c}</div><div class="kpi-value">${fmt(d.avgs[0])}</div><div class="kpi-sub kpi-neutral">Kindy avg</div></div>`;}).join('');
+  if(allInst)allInst.destroy();
+  allInst=new Chart(document.getElementById('allCampusChart'),{type:'bar',data:{labels:campuses,datasets:levels.map((lv,li)=>({label:levelLabels[li],data:campuses.map(c=>DATA[c][lv].avgs[0]),backgroundColor:colors[li],borderRadius:5,barThickness:22}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' Rp '+ctx.parsed.y+' jt'}}},scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#888'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>v+'jt',font:{size:11},color:'#888'},border:{display:false}}}}});
+  let h=`<table><thead><tr><th>Level</th>${campuses.map(c=>`<th style="text-align:center">SPH ${c}</th>`).join('')}</tr></thead><tbody>`;
+  levels.forEach((lv,li)=>{h+=`<tr><td>${levelLabels[li]}</td>`;campuses.forEach(c=>h+=`<td class="h-sph" style="text-align:center">${fmt(DATA[c][lv].avgs[0])}</td>`);h+=`</tr>`;});
+  h+=`</tbody></table>`;
+  document.getElementById('all-campus-table').innerHTML=h;
+}
+function setView(v,btn){view=v;document.querySelectorAll('.view-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.getElementById('view-a').style.display=v==='a'?'block':'none';document.getElementById('view-b').style.display=v==='b'?'block':'none';document.getElementById('campus-ctrl').style.opacity=v==='b'?'0.4':'1';if(v==='b')renderViewB();}
+function setCampus(c,btn){campus=c;document.querySelectorAll('#campus-ctrl .tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderAll();}
+function setLevel(l,btn){level=l;document.querySelectorAll('#level-ctrl .tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderAll();}
+function renderAll(){renderKPI();renderTable();renderHeat();renderBar();renderScatter();renderYoy();}
+window.addEventListener('load',()=>renderAll());
+</script>
+</body>
+</html>
